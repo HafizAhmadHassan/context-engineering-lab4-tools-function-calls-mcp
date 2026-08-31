@@ -1,0 +1,260 @@
+@import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-hover: var(--card-hover);
+  --color-border: var(--border);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  --color-ring: var(--ring);
+  --color-session-4: var(--session-4);
+  --color-session-1: var(--session-1);
+  --color-session-2: var(--session-2);
+  --color-session-3: var(--session-3);
+  --color-session-5: var(--session-5);
+  --color-session-6: var(--session-6);
+  --color-session-7: var(--session-7);
+  --color-session-8: var(--session-8);
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-serif: "Instrument Serif", serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+}
+
+:root {
+  --background: #ffffff;
+  --foreground: #111118;
+  --card: #f8f8fa;
+  --card-hover: #f0f0f3;
+  --border: #d8d8dd;
+  --muted: #f1f1f4;
+  --muted-foreground: #52525c;
+  --primary: #9333ea;
+  --primary-foreground: #fff;
+  --secondary: #a855f7;
+  --accent: #c084fc;
+  --ring: #9333ea;
+  --glow-opacity: 0.08;
+  --grid-line-color: #0000000a;
+  --dot-color: #0000000f;
+
+  --session-1: #16a34a;
+  --session-2: #2563eb;
+  --session-3: #0891b2;
+  --session-4: #9333ea;
+  --session-5: #ea580c;
+  --session-6: #d97706;
+  --session-7: #dc2626;
+  --session-8: #ec4899;
+}
+
+.dark {
+  --background: #0a0a0a;
+  --foreground: #f2f2f2;
+  --card: #121212;
+  --card-hover: #1a1a1a;
+  --border: #262626;
+  --muted: #1f1f1f;
+  --muted-foreground: #a3a3a3;
+  --primary: #a855f7;
+  --primary-foreground: #000;
+  --secondary: #c084fc;
+  --accent: #d8b4fe;
+  --ring: #a855f7;
+  --glow-opacity: 0.15;
+  --grid-line-color: #ffffff08;
+  --dot-color: #ffffff12;
+  --glow-purple-soft: #a855f714;
+  --glow-purple-med: #a855f726;
+  --glow-purple-strong: #a855f74d;
+  --star-color: #ffffff0a;
+  --nebula-1: #8b5cf60d;
+  --nebula-2: #a855f70a;
+
+  --session-1: #22c55e;
+  --session-2: #3b82f6;
+  --session-3: #06b6d4;
+  --session-4: #a855f7;
+  --session-5: #f97316;
+  --session-6: #f59e0b;
+  --session-7: #ef4444;
+  --session-8: #f472b6;
+}
+
+* {
+  border-color: var(--border);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  transition: background 0.3s, color 0.3s;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom utility classes matching the reference design */
+
+.gradient-text {
+  background: linear-gradient(135deg, var(--session-4) 0%, var(--accent) 100%);
+  -webkit-text-fill-color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.glow-purple {
+  box-shadow:
+    0 0 20px rgba(168, 85, 247, var(--glow-opacity)),
+    0 0 60px rgba(168, 85, 247, calc(var(--glow-opacity) / 3));
+}
+
+.hover-glow-purple {
+  transition: box-shadow 0.3s;
+}
+
+.hover-glow-purple:hover {
+  box-shadow:
+    0 0 25px rgba(168, 85, 247, var(--glow-opacity)),
+    0 0 50px rgba(168, 85, 247, calc(var(--glow-opacity) / 2));
+}
+
+.grid-pattern {
+  background-image:
+    linear-gradient(var(--grid-line-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line-color) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+.dot-pattern {
+  background-image: radial-gradient(var(--dot-color) 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+
+.interactive-card {
+  border: 1px solid var(--border);
+  background: var(--card);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  transition: border-color 0.3s;
+}
+
+.interactive-card:hover {
+  border-color: var(--session-4);
+}
+
+.observatory-card {
+  background: #0d1117;
+  border: 1px solid #a855f71f;
+  border-radius: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.observatory-card::after {
+  content: "";
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    #0000,
+    #0000 2px,
+    #a855f705 2px 4px
+  );
+  animation: 8s linear infinite scanlineMove;
+  position: absolute;
+  inset: 0;
+}
+
+@keyframes scanlineMove {
+  0% {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(40px);
+  }
+}
+
+.star-field {
+  background-image:
+    radial-gradient(1px 1px at 10% 20%, var(--star-color) 50%, transparent 100%),
+    radial-gradient(1px 1px at 30% 65%, var(--star-color) 50%, transparent 100%),
+    radial-gradient(1px 1px at 55% 15%, var(--star-color) 50%, transparent 100%),
+    radial-gradient(1px 1px at 70% 80%, var(--star-color) 50%, transparent 100%),
+    radial-gradient(1px 1px at 85% 40%, var(--star-color) 50%, transparent 100%),
+    radial-gradient(1px 1px at 20% 90%, var(--star-color) 50%, transparent 100%),
+    radial-gradient(1px 1px at 45% 50%, var(--star-color) 50%, transparent 100%),
+    radial-gradient(1px 1px at 92% 10%, var(--star-color) 50%, transparent 100%);
+}
+
+.glow-border-purple {
+  box-shadow:
+    0 0 8px var(--glow-purple-soft),
+    0 0 24px var(--glow-purple-soft),
+    inset 0 0 8px var(--glow-purple-soft);
+  animation: 3s ease-in-out infinite glowPulse;
+}
+
+@keyframes glowPulse {
+  0%,
+  to {
+    box-shadow:
+      0 0 8px var(--glow-purple-soft),
+      0 0 24px var(--glow-purple-soft);
+  }
+  50% {
+    box-shadow:
+      0 0 12px var(--glow-purple-med),
+      0 0 36px var(--glow-purple-med);
+  }
+}
+
+.scanline-overlay {
+  position: relative;
+}
+
+.scanline-overlay::before {
+  content: "";
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    #0000,
+    #0000 2px,
+    #a855f704 2px 4px
+  );
+  animation: 8s linear infinite scanlineMove;
+  position: absolute;
+  inset: 0;
+}
+
+@keyframes spin360 {
+  to {
+    transform: rotate(360deg);
+  }
+}
