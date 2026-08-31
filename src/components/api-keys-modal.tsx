@@ -19,11 +19,13 @@ function ApiKeyForm({ onClose }: { onClose: () => void }) {
   const { apiKeys, setApiKeys } = useLab();
   const [gemini, setGemini] = React.useState(apiKeys.gemini ?? "");
   const [openai, setOpenai] = React.useState(apiKeys.openai ?? "");
+  const [groq, setGroq] = React.useState(apiKeys.groq ?? "");
 
   const save = () => {
     const next: ApiKeys = {
       gemini: gemini.trim() || undefined,
       openai: openai.trim() || undefined,
+      groq: groq.trim() || undefined,
     };
     setApiKeys(next);
     onClose();
@@ -74,6 +76,18 @@ function ApiKeyForm({ onClose }: { onClose: () => void }) {
           placeholder="sk-..."
           value={openai}
           onChange={(e) => setOpenai(e.target.value)}
+          className="mb-4 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50"
+        />
+
+        <label className="mb-1 block text-sm font-medium">OR Groq API Key</label>
+        <div className="mb-2 text-xs text-muted-foreground">
+          (free tier available)
+        </div>
+        <input
+          type="password"
+          placeholder="gsk_..."
+          value={groq}
+          onChange={(e) => setGroq(e.target.value)}
           className="mb-6 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/50"
         />
 

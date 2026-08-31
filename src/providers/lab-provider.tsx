@@ -5,6 +5,7 @@ import * as React from "react";
 export interface ApiKeys {
   gemini?: string;
   openai?: string;
+  groq?: string;
 }
 
 interface LabContextValue {
@@ -71,7 +72,7 @@ export function LabProvider({ children }: { children: React.ReactNode }) {
     [completedPhases]
   );
 
-  const hasApiKey = Boolean(apiKeys.gemini || apiKeys.openai);
+  const hasApiKey = Boolean(apiKeys.gemini || apiKeys.openai || apiKeys.groq);
 
   const setApiKeys = React.useCallback((keys: ApiKeys) => {
     setApiKeysState(keys);
