@@ -1,4 +1,5 @@
 # Day 4: Tools, Function Calling & MCP — Context Engineering Workshop
+*Created: 2026-08-31*
 
 An independent, from-scratch recreation of the `day4-unified-lab.vercel.app`
 interactive workshop interface. It covers **tool schemas**, **function
