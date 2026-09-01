@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { Key, Moon, Sun, Wrench } from "lucide-react";
+import Link from "next/link";
+import { Key, Moon, Sun, Wrench, BookOpen } from "lucide-react";
 import { useTheme } from "@/providers/theme-provider";
 import { useLab } from "@/providers/lab-provider";
 import { ApiKeysModal } from "@/components/api-keys-modal";
@@ -22,6 +23,13 @@ export function Header() {
             </span>
           </div>
           <div className="flex items-center gap-3">
+            <Link
+              href="/quiz"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-[var(--session-4)] hover:text-foreground cursor-pointer"
+            >
+              <BookOpen className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Quiz</span>
+            </Link>
             <div className="flex items-center gap-1.5 text-xs">
               {keysMounted && hasApiKey ? (
                 <span className="text-green-500">API key set</span>

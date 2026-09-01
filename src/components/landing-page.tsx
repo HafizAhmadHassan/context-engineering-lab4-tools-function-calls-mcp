@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { ArrowRight, Layers, MousePointerClick, Server, Workflow } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, BookOpen, Layers, MousePointerClick, Server, Workflow } from "lucide-react";
 import { useLab } from "@/providers/lab-provider";
 import { cn } from "@/lib/utils";
 
@@ -132,15 +133,22 @@ export function LandingPage() {
       </div>
 
       {/* Start button */}
-      <div className="text-center">
+      <div className="flex flex-wrap items-center justify-center gap-3">
         <button
           type="button"
           onClick={start}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-all hover:brightness-110 glow-purple"
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-all hover:brightness-110 glow-purple cursor-pointer"
         >
           Start the lab
           <ArrowRight className="h-4 w-4" />
         </button>
+        <Link
+          href="/quiz"
+          className="inline-flex items-center gap-2 rounded-lg border border-border px-6 py-3 text-sm font-medium transition-colors hover:border-[var(--session-4)] hover:bg-card cursor-pointer"
+        >
+          <BookOpen className="h-4 w-4 text-[var(--session-4)]" />
+          Take the Quiz
+        </Link>
       </div>
     </div>
   );
