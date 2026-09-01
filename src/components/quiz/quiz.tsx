@@ -1,17 +1,24 @@
 "use client";
 
 import * as React from "react";
-import { ArrowLeft, ArrowRight, RefreshCw, Trophy } from "lucide-react";
+import {
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  RotateCcw,
+  Trophy,
+  X,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   QUIZ_QUESTIONS,
   SECTION_COLORS,
   DEFAULT_COLOR,
 } from "@/lib/quiz-data";
-import { PhaseTabs } from "@/components/ui/phase-tabs";
 
 type AnswerMap = Record<number, string>;
 type View = "quiz" | "results";
+type Difficulty = "easy" | "medium" | "hard" | "tricky";
 
 const OPTION_STYLES: Record<string, { border: string; bg: string; text: string }> = {
   A: { border: "#a5d8ff", bg: "rgba(165,216,255,0.08)", text: "#a5d8ff" },
@@ -20,12 +27,30 @@ const OPTION_STYLES: Record<string, { border: string; bg: string; text: string }
   D: { border: "#b2f2bb", bg: "rgba(178,242,187,0.08)", text: "#b2f2bb" },
 };
 
+const DIFFICULTY_COLORS: Record<Difficulty, string> = {
+  easy: "#22c55e",
+  medium: "#facc15",
+  hard: "#f97316",
+  tricky: "#ef4444",
+};
+
+const SECTION_ORDER = [
+  "Tool Fundamentals & Schema Design",
+  "JIT Instructions & Safety",
+  "ReAct Pattern & Agent Behavior",
+  "MCP Architecture & Protocol",
+  "Production Concerns",
+];
+
 export function Quiz() {
   const sections = React.useMemo(
-    () => Array.from(new Set(QUIZ_QUESTIONS.map((q) => q.section))),
+    () =>
+      SECTION_ORDER.filter((s) =>
+        QUIZ_QUESTIONS.some((q) => q.section === s)
+      ),
     []
   );
-  const [activeSection, setActiveSection] = React.useState(sections[0]);
+  const [activeSection, setActiveSection] = React.useState<string | null>(null);
   const [qIndex, setQIndex] = React.useState(0);
   const [selected, setSelected] = React.useState<string | null>(null);
   const [revealed, setRevealed] = React.useState(false);
@@ -33,32 +58,52 @@ export function Quiz() {
   const [answers, setAnswers] = React.useState<AnswerMap>({});
 
   const currentQuestions = React.useMemo(
-    () => QUIZ_QUESTIONS.filter((q) => q.section === activeSection),
+    () =>
+      activeSection
+        ? QUIZ_QUESTIONS.filter((q) => q.section === activeSection)
+        : QUIZ_QUESTIONS,
     [activeSection]
   );
   const question = currentQuestions[qIndex];
   const total = currentQuestions.length;
-
-  const correctCount = React.useMemo(
+  const score = currentQuestions.filter(
+    (q) => answers[q.id] === q.correctAnswer
+  ).length;
+  const totalCorrect = React.useMemo(
     () =>
       QUIZ_QUESTIONS.filter((q) => answers[q.id] === q.correctAnswer).length,
     [answers]
   );
+  const answeredCount = currentQuestions.filter(
+    (q) => answers[q.id] !== undefined
+  ).length;
 
-  const selectSection = (section: string) => {
-    setActiveSection(section);
-    setQIndex(0);
-    setSelected(null);
-    setRevealed(false);
+  const viewQuestion = (q: (typeof QUIZ_QUESTIONS)[number]) => {
+    setSelected(answers[q.id] ?? null);
+    setRevealed(answers[q.id] !== undefined);
     setView("quiz");
   };
 
+  const pickSection = (section: string | null) => {
+    setActiveSection(section);
+    const first = section
+      ? QUIZ_QUESTIONS.filter((q) => q.section === section)[0]
+      : QUIZ_QUESTIONS[0];
+    setQIndex(0);
+    viewQuestion(first);
+  };
+
+  const goToIndex = (i: number) => {
+    const q = currentQuestions[i];
+    if (!q) return;
+    setQIndex(i);
+    setSelected(answers[q.id] ?? null);
+    setRevealed(answers[q.id] !== undefined);
+  };
+
   const prevQuestion = () => {
-    setQIndex((i) => Math.max(0, i - 1));
-    const prev = currentQuestions[Math.max(0, qIndex - 1)];
-    setSelected(prev ? (answers[prev.id] ?? null) : null);
-    const answered = prev ? answers[prev.id] !== undefined : false;
-    setRevealed(answered);
+    if (qIndex === 0) return;
+    goToIndex(qIndex - 1);
   };
 
   const nextQuestion = () => {
@@ -66,10 +111,7 @@ export function Quiz() {
       setView("results");
       return;
     }
-    setQIndex(qIndex + 1);
-    const next = currentQuestions[qIndex + 1];
-    setSelected(next ? (answers[next.id] ?? null) : null);
-    setRevealed(next ? answers[next.id] !== undefined : false);
+    goToIndex(qIndex + 1);
   };
 
   const pick = (label: string) => {
@@ -78,16 +120,16 @@ export function Quiz() {
   };
 
   const submit = () => {
-    if (!selected || revealed) return;
+    if (!selected || revealed || !question) return;
     setAnswers((prev) => ({ ...prev, [question.id]: selected }));
     setRevealed(true);
   };
 
-  const resetSection = () => {
-    const sectionIds = currentQuestions.map((q) => q.id);
+  const restartScope = () => {
+    const ids = currentQuestions.map((q) => q.id);
     setAnswers((prev) => {
       const next = { ...prev };
-      sectionIds.forEach((id) => delete next[id]);
+      ids.forEach((id) => delete next[id]);
       return next;
     });
     setQIndex(0);
@@ -96,7 +138,21 @@ export function Quiz() {
     setView("quiz");
   };
 
+  const restartAll = () => {
+    setAnswers({});
+    setActiveSection(null);
+    setQIndex(0);
+    setSelected(null);
+    setRevealed(false);
+    setView("quiz");
+  };
+
+  if (!question) return null;
+
   if (view === "results") {
+    const percent = Math.round((totalCorrect / QUIZ_QUESTIONS.length) * 100);
+    const emoji =
+      percent >= 80 ? "🏆" : percent >= 60 ? "👏" : percent >= 40 ? "💪" : "📚";
     const sectionResults = sections.map((section) => {
       const qs = QUIZ_QUESTIONS.filter((q) => q.section === section);
       return {
@@ -105,8 +161,6 @@ export function Quiz() {
         correct: qs.filter((q) => answers[q.id] === q.correctAnswer).length,
       };
     });
-    const percent = Math.round((correctCount / QUIZ_QUESTIONS.length) * 100);
-    const emoji = percent >= 80 ? "🏆" : percent >= 60 ? "👏" : percent >= 40 ? "💪" : "📚";
 
     return (
       <div className="space-y-6">
@@ -127,9 +181,9 @@ export function Quiz() {
             </div>
             <div className="text-left">
               <div className="text-5xl font-bold text-[var(--session-4)]">
-                {correctCount}/{QUIZ_QUESTIONS.length}
+                {totalCorrect}/{QUIZ_QUESTIONS.length}
               </div>
-              <div className="text-[#a3a3a3]">correct answers</div>
+              <div className="text-muted-foreground">correct answers</div>
             </div>
           </div>
         </div>
@@ -141,7 +195,7 @@ export function Quiz() {
               key={s.section}
               className="rounded-xl border border-border bg-card p-5"
             >
-              <div className="mb-2 flex items-center gap-2">
+              <div className="mb-3 flex items-center gap-2">
                 <div
                   className="h-2.5 w-2.5 rounded-full"
                   style={{ background: color }}
@@ -156,50 +210,42 @@ export function Quiz() {
                   {s.correct}/{s.total}
                 </span>
               </div>
-              <div className="space-y-2">
+              <div className="flex flex-wrap gap-1.5">
                 {QUIZ_QUESTIONS.filter((q) => q.section === s.section).map(
                   (q) => {
                     const ans = answers[q.id];
                     const isCorrect = ans === q.correctAnswer;
                     const unanswered = ans === undefined;
-                    const qGlobal =
-                      QUIZ_QUESTIONS.findIndex((qq) => qq.id === q.id);
                     return (
                       <button
                         key={q.id}
                         type="button"
                         onClick={() => {
-                          setView("quiz");
-                          selectSection(s.section);
-                          setQIndex(
-                            QUIZ_QUESTIONS.filter(
-                              (qq) => qq.section === s.section
-                            ).findIndex((qq) => qq.id === q.id)
-                          );
+                          setActiveSection(s.section);
+                          const idx = QUIZ_QUESTIONS.filter(
+                            (qq) => qq.section === s.section
+                          ).findIndex((qq) => qq.id === q.id);
+                          setQIndex(idx);
+                          viewQuestion(q);
                         }}
-                        className="w-full rounded-lg border px-4 py-3 text-left transition-colors"
-                        style={{
-                          borderColor: unanswered
-                            ? "rgba(255,255,255,0.1)"
-                            : isCorrect
-                              ? "rgba(34,197,94,0.3)"
-                              : "rgba(239,68,68,0.3)",
-                          background: unanswered
-                            ? "rgba(255,255,255,0.02)"
-                            : isCorrect
-                              ? "rgba(34,197,94,0.05)"
-                              : "rgba(239,68,68,0.05)",
-                        }}
+                        title={`Q${q.id} — ${q.question}`}
+                        className={cn(
+                          "flex h-9 w-9 items-center justify-center rounded-lg border text-sm font-bold transition-all hover:brightness-125 cursor-pointer",
+                          isCorrect && "border-green-500/40 bg-green-500/15",
+                          !unanswered &&
+                            !isCorrect &&
+                            "border-red-500/40 bg-red-500/10",
+                          unanswered &&
+                            "border-border bg-muted/50 text-muted-foreground"
+                        )}
                       >
-                        <div className="flex items-center gap-3">
-                          <span className="text-xs text-muted-foreground">
-                            {String(qGlobal + 1).padStart(2, "0")}
-                          </span>
-                          <span className="text-sm">{q.question}</span>
-                          <span className="ml-auto shrink-0 text-sm">
-                            {unanswered ? "—" : isCorrect ? "✓" : "✗"}
-                          </span>
-                        </div>
+                        {unanswered ? (
+                          q.id
+                        ) : isCorrect ? (
+                          <Check className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <X className="h-4 w-4 text-red-500" />
+                        )}
                       </button>
                     );
                   }
@@ -212,17 +258,10 @@ export function Quiz() {
         <div className="flex flex-wrap justify-center gap-3">
           <button
             type="button"
-            onClick={() => {
-              setAnswers({});
-              setActiveSection(sections[0]);
-              setQIndex(0);
-              setSelected(null);
-              setRevealed(false);
-              setView("quiz");
-            }}
+            onClick={restartAll}
             className="inline-flex items-center gap-2 rounded-lg border border-border px-5 py-2.5 text-sm font-medium transition-colors hover:bg-card cursor-pointer"
           >
-            <RefreshCw className="h-4 w-4" />
+            <RotateCcw className="h-4 w-4" />
             Retake Quiz
           </button>
         </div>
@@ -230,95 +269,238 @@ export function Quiz() {
     );
   }
 
-  return (
-    <div className="space-y-6">
-      <PhaseTabs tabs={sections} active={activeSection} onChange={selectSection} />
+  const sectionColor = activeSection
+    ? SECTION_COLORS[activeSection] || DEFAULT_COLOR
+    : DEFAULT_COLOR;
+  const isCorrect = revealed && selected === question.correctAnswer;
 
+  return (
+    <div className="space-y-5">
+      {/* Section chips */}
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        <button
+          type="button"
+          onClick={() => pickSection(null)}
+          className="rounded-full px-3.5 py-1.5 text-xs font-semibold tracking-wide transition-all cursor-pointer"
+          style={
+            activeSection === null
+              ? {
+                  background: DEFAULT_COLOR,
+                  color: "#000",
+                  border: `1px solid ${DEFAULT_COLOR}`,
+                }
+              : {
+                  background: "var(--muted)",
+                  color: "var(--muted-foreground)",
+                  border: "1px solid var(--border)",
+                }
+          }
+        >
+          All ({QUIZ_QUESTIONS.length})
+        </button>
+        {sections.map((s) => {
+          const count = QUIZ_QUESTIONS.filter((q) => q.section === s).length;
+          const color = SECTION_COLORS[s] || DEFAULT_COLOR;
+          const isActive = activeSection === s;
+          return (
+            <button
+              key={s}
+              type="button"
+              onClick={() => pickSection(s)}
+              className="rounded-full px-3.5 py-1.5 text-xs font-semibold tracking-wide transition-all cursor-pointer"
+              style={
+                isActive
+                  ? { background: color, color: "#000", border: `1px solid ${color}` }
+                  : {
+                      background: "var(--muted)",
+                      color: "var(--muted-foreground)",
+                      border: "1px solid var(--border)",
+                    }
+              }
+            >
+              {s.split(" & ")[0].split(" ").slice(0, 2).join(" ")} ({count})
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Question number grid */}
+      <div className="flex flex-wrap items-center justify-center gap-1.5">
+        {currentQuestions.map((q, i) => {
+          const ans = answers[q.id];
+          const answered = ans !== undefined;
+          const isCurrent = i === qIndex;
+          const correct = answered && ans === q.correctAnswer;
+          return (
+            <button
+              key={q.id}
+              type="button"
+              onClick={() => goToIndex(i)}
+              className={cn(
+                "flex h-9 w-9 items-center justify-center rounded-lg text-sm font-bold transition-all hover:brightness-125 cursor-pointer",
+                isCurrent &&
+                  "border-2 border-[var(--session-4)] text-foreground",
+                !isCurrent && correct && "border-2 border-green-500/40 bg-green-500/15 text-green-500",
+                !isCurrent && answered && !correct && "border-2 border-red-500/40 bg-red-500/10 text-red-500",
+                !isCurrent && !answered && "border border-border bg-muted/50 text-muted-foreground"
+              )}
+            >
+              {q.id}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Question header */}
       <div className="rounded-xl border border-border bg-card p-6">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <span
-            className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium"
-            style={{
-              borderColor: SECTION_COLORS[activeSection],
-              color: SECTION_COLORS[activeSection],
-            }}
-          >
-            {activeSection}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            Question {qIndex + 1} of {total}
-          </span>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="rounded-lg bg-muted px-3 py-1.5 text-sm font-medium text-muted-foreground">
+              Q {qIndex + 1}
+              <span className="text-muted-foreground/60"> / {total}</span>
+            </span>
+            <div className="h-1.5 w-28 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full transition-all duration-300"
+                style={{
+                  width: `${(answeredCount / total) * 100}%`,
+                  background: sectionColor,
+                }}
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span
+              className="rounded-md px-2.5 py-1 text-xs font-semibold uppercase tracking-wider"
+              style={{
+                background: `${DIFFICULTY_COLORS[question.difficulty]}15`,
+                color: DIFFICULTY_COLORS[question.difficulty],
+              }}
+            >
+              {question.difficulty}
+            </span>
+            <span
+              className="rounded-md px-2.5 py-1 text-xs font-medium"
+              style={{
+                background: `${sectionColor}15`,
+                color: sectionColor,
+              }}
+            >
+              {question.topic}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Trophy className="h-4 w-4 text-green-500" />
+            <span className="font-mono text-sm font-bold text-green-500">
+              {score}
+            </span>
+          </div>
         </div>
 
-        <h2 className="mb-5 text-lg font-semibold leading-relaxed">
+        <h2
+          key={question.id}
+          className="quiz-question-enter mb-6 text-xl font-semibold leading-relaxed tracking-tight md:text-[24px]"
+        >
           {question.question}
         </h2>
 
-        <div className="space-y-2.5">
+        {/* Options */}
+        <div className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-2">
           {question.options.map((opt) => {
-            const isCorrect = revealed && opt.label === question.correctAnswer;
-            const isWrong = revealed && opt.label === selected && opt.label !== question.correctAnswer;
             const style = OPTION_STYLES[opt.label];
+            const isSel = selected === opt.label;
+            const isAns = opt.label === question.correctAnswer;
+            let borderColor = "#262626";
+            let bg = "var(--card-hover)";
+            if (revealed && isAns) {
+              borderColor = "#22c55e";
+              bg = "rgba(34,197,94,0.08)";
+            } else if (revealed && isSel && !isAns) {
+              borderColor = "#ef4444";
+              bg = "rgba(239,68,68,0.08)";
+            } else if (isSel) {
+              borderColor = style.border;
+              bg = style.bg;
+            }
             return (
               <button
                 key={opt.label}
                 type="button"
                 onClick={() => pick(opt.label)}
+                disabled={revealed}
                 className={cn(
-                  "flex w-full items-start gap-3 rounded-lg border px-4 py-3 text-left text-sm transition-colors cursor-pointer",
-                  !revealed && selected === opt.label && "brightness-125"
+                  "relative flex min-h-[120px] cursor-pointer items-start gap-4 rounded-xl border-2 p-5 text-left transition-colors disabled:cursor-default",
+                  !revealed && "hover:border-[var(--session-4)]"
                 )}
                 style={{
-                  borderColor: isCorrect
-                    ? "rgba(34,197,94,0.5)"
-                    : isWrong
-                      ? "rgba(239,68,68,0.5)"
-                      : selected === opt.label
-                        ? style.border
-                        : "rgba(255,255,255,0.1)",
-                  background: isCorrect
-                    ? "rgba(34,197,94,0.08)"
-                    : isWrong
-                      ? "rgba(239,68,68,0.08)"
-                      : selected === opt.label
-                        ? style.bg
-                        : "rgba(255,255,255,0.02)",
+                  borderColor,
+                  background: bg || "var(--card-hover)",
                 }}
               >
-                <span
-                  className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold"
+                <div
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-lg font-bold"
                   style={{
-                    border: `1px solid ${style.border}`,
-                    color: style.text,
-                    background: selected === opt.label || isCorrect ? style.bg : "transparent",
+                    background:
+                      revealed && isAns
+                        ? "#22c55e"
+                        : revealed && isSel && !isAns
+                          ? "#ef4444"
+                          : isSel
+                            ? style.border
+                            : "#1f1f1f",
+                    color:
+                      revealed && (isAns || (isSel && !isAns))
+                        ? "#000"
+                        : isSel
+                          ? "#000"
+                          : style.text,
                   }}
                 >
-                  {opt.label}
+                  {revealed && isAns ? (
+                    <Check size={20} strokeWidth={3} />
+                  ) : revealed && isSel && !isAns ? (
+                    <X size={20} strokeWidth={3} />
+                  ) : (
+                    opt.label
+                  )}
+                </div>
+                <span className="pt-1.5 text-[15px] leading-relaxed">
+                  {opt.text}
                 </span>
-                <span className="leading-relaxed">{opt.text}</span>
               </button>
             );
           })}
         </div>
 
+        {/* Explanation */}
         {revealed && (
           <div
-            className="mt-4 rounded-lg border p-4"
+            className="mb-5 rounded-xl border p-5"
             style={{
-              borderColor:
-                selected === question.correctAnswer
-                  ? "rgba(34,197,94,0.3)"
-                  : "rgba(239,68,68,0.3)",
-              background:
-                selected === question.correctAnswer
-                  ? "rgba(34,197,94,0.05)"
-                  : "rgba(239,68,68,0.05)",
+              borderColor: isCorrect
+                ? "rgba(34,197,94,0.3)"
+                : "rgba(239,68,68,0.3)",
+              background: isCorrect
+                ? "rgba(34,197,94,0.05)"
+                : "rgba(239,68,68,0.05)",
             }}
           >
-            <div className="mb-1 text-sm font-semibold">
-              {selected === question.correctAnswer
-                ? "✓ Correct"
-                : `✗ Incorrect — correct answer: ${question.correctAnswer}`}
+            <div className="mb-2 flex items-center gap-2">
+              {isCorrect ? (
+                <>
+                  <Check size={20} className="text-green-500" strokeWidth={3} />
+                  <span className="text-sm font-bold uppercase tracking-wider text-green-500">
+                    Correct!
+                  </span>
+                </>
+              ) : (
+                <>
+                  <X size={20} className="text-red-500" strokeWidth={3} />
+                  <span className="text-sm font-bold uppercase tracking-wider text-red-500">
+                    Not quite — the answer is {question.correctAnswer}
+                  </span>
+                </>
+              )}
             </div>
             <p className="text-sm leading-relaxed text-foreground/80">
               {question.explanation}
@@ -326,48 +508,68 @@ export function Quiz() {
           </div>
         )}
 
-        <div className="mt-6 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={prevQuestion}
-            disabled={qIndex === 0}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-card disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Previous
-          </button>
-
-          {revealed ? (
+        {/* Footer nav */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={nextQuestion}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--session-4)] px-4 py-2 text-sm font-medium text-white transition-all hover:brightness-110 cursor-pointer"
+              onClick={prevQuestion}
+              disabled={qIndex === 0}
+              className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground disabled:opacity-30 cursor-pointer"
             >
-              {qIndex >= total - 1 ? "See Results" : "Next Question"}
-              <ArrowRight className="h-4 w-4" />
+              <ChevronLeft size={15} />
+              Prev
             </button>
-          ) : (
             <button
               type="button"
-              onClick={submit}
-              disabled={!selected}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--session-4)] px-4 py-2 text-sm font-medium text-white transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+              onClick={restartScope}
+              title={`Restart ${activeSection ?? "All"} questions`}
+              className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
             >
-              <Trophy className="h-4 w-4" />
-              Submit Answer
+              <RotateCcw size={14} />
+              Restart
             </button>
-          )}
-        </div>
-
-        <div className="mt-4 flex justify-end">
-          <button
-            type="button"
-            onClick={resetSection}
-            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
-          >
-            <RefreshCw className="h-3.5 w-3.5" />
-            Reset this section
-          </button>
+          </div>
+          <div className="flex items-center gap-3">
+            {!revealed ? (
+              <>
+                <button
+                  type="button"
+                  onClick={nextQuestion}
+                  className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground cursor-pointer"
+                >
+                  Skip
+                  <ChevronRight size={15} />
+                </button>
+                <button
+                  type="button"
+                  onClick={submit}
+                  disabled={!selected}
+                  className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all disabled:cursor-not-allowed disabled:opacity-30 hover:brightness-110 cursor-pointer bg-[var(--session-4)] text-white"
+                >
+                  Lock In Answer
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={nextQuestion}
+                className="inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all hover:brightness-110 cursor-pointer bg-[var(--session-4)] text-white"
+              >
+                {qIndex >= total - 1 ? (
+                  <>
+                    See Results
+                    <Trophy size={16} />
+                  </>
+                ) : (
+                  <>
+                    Next
+                    <ChevronRight size={16} />
+                  </>
+                )}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
