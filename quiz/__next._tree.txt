@@ -1,0 +1,2 @@
+:HL["/context-engineering-lab4-tools-function-calls-mcp/_next/static/chunks/1jnh07vg8h3dk.css","style"]
+0:{"tree":{"name":"","param":null,"prefetchHints":4180,"slots":{"children":{"name":"quiz","param":null,"prefetchHints":4192,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}},"staleTime":300,"buildId":"HHLU1k089OjvuYucQHnRB"}
